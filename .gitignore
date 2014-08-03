@@ -1,0 +1,9 @@
+*.o
+*.lst
+*.d
+*.args
+*.mk
+*makefile*
+*twrk60n512_Int_Flash_Debug*
+*.elf
+*.map
