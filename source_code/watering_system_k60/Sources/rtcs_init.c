@@ -206,7 +206,7 @@ void rtcs_init()
 #endif /* BSP_ENET_DEVICE_COUNT */   
    
 #if RTCS_PPP
-    PPP_start();
+    //PPP_start();
 #endif /* RTCS_PPP */
 
    /* TODO: start server(s) in separate tasks */

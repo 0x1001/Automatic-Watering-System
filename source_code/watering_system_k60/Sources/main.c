@@ -31,6 +31,7 @@
 #include "main.h"
 #include "pump.h"
 
+#include "tfs.h"
 
 #if !defined(RAM_DISK_SIZE)
 #error Please specify RAM_DISK_SIZE
@@ -40,11 +41,19 @@
 #error This application requires SHELLCFG_USES_RTCS defined non-zero in user_config.h. Please recompile libraries with this option if any Ethernet interface is available.
 #endif
 
+#define HTTP_SERVER   2
+void http_server_task(uint32_t initial_data); 
+
+HTTPSRV_ALIAS http_aliases[] = {
+    {"/usb/", "c:\\"},
+    {NULL, NULL}
+    };
 
 TASK_TEMPLATE_STRUCT MQX_template_list[] =
 {
 /*  Task number, Entry point, Stack, Pri, String, Auto? */
    {MAIN_TASK,   Main_task,   2000,  9,   "main", MQX_AUTO_START_TASK},
+   {HTTP_SERVER,   http_server_task,   1400,  9,   "HTTP_SERVER", MQX_AUTO_START_TASK,   0,  0},
    {0,           0,           0,     0,   0,      0,                 }
 };
 
@@ -63,8 +72,38 @@ void Main_task(uint32_t initial_data)
     //Ram_disk_start();
   
    /* RTCS init */
-    //rtcs_init();
-   
+   rtcs_init();
+}
+
+void http_server_task(uint32_t initial_data) {
+    uint32_t server;
+    int32_t error;
+    extern const HTTPSRV_CGI_LINK_STRUCT cgi_lnk_tbl[];
+    extern const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[];
+    extern const TFS_DIR_ENTRY tfs_data[];
+    HTTPSRV_PARAM_STRUCT params;
+    
+    error = _io_tfs_install("tfs:", tfs_data);
+    if (error) printf("\nTFS install returned: %08x\n", error);
+
+    /* Setup webserver parameters */
+    _mem_zero(&params, sizeof(HTTPSRV_PARAM_STRUCT));
+    params.af |= AF_INET;
+    params.root_dir = "tfs:";
+    params.alias_tbl = (HTTPSRV_ALIAS*)http_aliases;
+    params.index_page = "\\mqx.shtml";
+    //params.cgi_lnk_tbl = (HTTPSRV_CGI_LINK_STRUCT*)cgi_lnk_tbl;
+    //params.ssi_lnk_tbl = (HTTPSRV_SSI_LINK_STRUCT*)fn_lnk_tbl;
+    params.script_stack = 2500;
+
+    server = HTTPSRV_init(&params);
+    if(!server)
+    {
+        printf("Error: HTTP server init error.\n");
+    }
+}
+
+void button_pump_control(void){
     LWGPIO_STRUCT btn1;
     pump p;
     
