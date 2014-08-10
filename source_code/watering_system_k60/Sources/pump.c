@@ -26,9 +26,14 @@ void pump_stop(pump_ptr p) {
 }
 
 void pump_run(pump_ptr p,uint32_t duration){
-	pump_start(p);
-    _time_delay(duration);
-    pump_stop(p);
+	uint32_t counter;
+	
+	for(counter = 0; counter <= duration/2; counter++){
+		pump_start(p);
+		_time_delay(1);
+		pump_stop(p);
+		_time_delay(1);
+	}
 }
 
 static void _led_indicator_init(pump_ptr p) {
