@@ -16,8 +16,6 @@ typedef struct {
 } pump, *pump_ptr;
 
 void pump_init(pump_ptr p);
-void pump_start(pump_ptr p);
-void pump_stop(pump_ptr p);
 void pump_run(pump_ptr p, uint32_t duration);
 
 #endif /* PUMP_H_ */
