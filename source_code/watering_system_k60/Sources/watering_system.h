@@ -20,12 +20,11 @@ typedef struct {
 	uint32_t time_between_watering;
 	uint32_t watering_cycles;
 	uint32_t dry_time;
-	pump pump;
-} watering_system, *watering_system_ptr;
+	pump_ptr pump;
+} watering_system_params, *watering_system_params_ptr;
 
-void watering_system_init(watering_system_ptr w, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time);
-void watering_system_update(watering_system_ptr w, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time);
-void watering_system_start(watering_system_ptr w);
-void watering_system_pump_water(watering_system_ptr w, uint32_t duration);
+void watering_system(uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time);
+void watering_system_update(uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time);
+void watering_system_pump_water(uint32_t duration);
 
 #endif /* WATERING_SYSTEM_H_ */

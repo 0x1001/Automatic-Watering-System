@@ -29,50 +29,78 @@
 *
 *END************************************************************************/
 #include "main.h"
-#include "watering_system.h"
 
 TASK_TEMPLATE_STRUCT MQX_template_list[] =
 {
 /*  Task number, Entry point, Stack, Pri, String, Auto? */
    {MAIN_TASK,   Main_task,   2000,  9,   "main", MQX_AUTO_START_TASK},
-   {WATERING,   watering_task,   2000,  9,   "watering_task", 0},
+   {WATERING,   watering_task,   2000,  10,   "watering_task", 0},
+   {HTTP_SERVER,   http_server_task,   2000,  9,   "HTTP_SERVER", 0,   0,  0},
+   {RTCS_INIT,   rtcs_init_task,   2000,  9,   "RTCS_INIT", 0,   0,  0},
+   {BUTTON_CTRL,   button_task,   2000,  10,   "BUTTON_CTRL", 0,   0,  0},
    {0,           0,           0,     0,   0,      0,                 }
 };
-
-watering_system w;
 
 /*TASK*-----------------------------------------------------------------
 *
 * Function Name  : Main_task
 * Comments       :
-*    Pump control
+*    Main task
 *
 *END------------------------------------------------------------------*/
 
-void Main_task(uint32_t initial_data)
-{
-	uint32_t delay = 10;
-    LWGPIO_STRUCT btn1;
-	
-	watering_system_init(&w, DAY, 2, 2*SECOND, 2*DAY);
-	
-	_task_create(0, WATERING, 0);
-	
-    if (!lwgpio_init(&btn1, BSP_BUTTON1, LWGPIO_DIR_INPUT, LWGPIO_VALUE_NOCHANGE))
-        _task_block();
-
-    lwgpio_set_functionality(&btn1, BSP_BUTTON1_MUX_GPIO);
-    lwgpio_set_attribute(&btn1, LWGPIO_ATTR_PULL_UP, LWGPIO_AVAL_ENABLE);
-
-    while (TRUE){
-        if (LWGPIO_VALUE_LOW == lwgpio_get_value(&btn1))
-        	watering_system_pump_water(&w, delay);
-        else
-        	_time_delay(delay);
-    }
-
+void Main_task(uint32_t initial_data){
+    _task_create(0,RTCS_INIT,0);
+    _task_create(0,HTTP_SERVER,0);
+    _task_create(0, WATERING, 0);
+    _task_create(0,BUTTON_CTRL,0);
+   _task_block();
 }
 
+/*TASK*-----------------------------------------------------------------
+*
+* Function Name  : watering_task
+* Comments       :
+*    Watering System task
+*
+*END------------------------------------------------------------------*/
 void watering_task(uint32_t initial_data){
-	watering_system_start(&w);
+    watering_system(DAY, 2, 2*SECOND, 2*DAY);
+    _task_block();
+}
+
+/*TASK*-----------------------------------------------------------------
+*
+* Function Name  : http_server_task
+* Comments       :
+*    HTTP Server task
+*
+*END------------------------------------------------------------------*/
+void http_server_task(uint32_t initial_data){
+    http_server();
+    _task_block();
+}
+
+/*TASK*-----------------------------------------------------------------
+*
+* Function Name  : rtcs_init_task
+* Comments       :
+*    RTCS Network Initialization
+*
+*END------------------------------------------------------------------*/
+void rtcs_init_task(uint32_t initial_data){
+    rtcs_init();
+    _task_block();
+}
+
+/*TASK*-----------------------------------------------------------------
+*
+* Function Name  : button_task
+* Comments       :
+*    Button control
+*
+*END------------------------------------------------------------------*/
+void button_task(uint32_t initial_data){
+    button();
+    _task_block();
 }
