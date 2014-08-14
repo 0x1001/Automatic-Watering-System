@@ -10,8 +10,8 @@
 void watering_system_init(watering_system_ptr w, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
 	pump p;
 	pump_init(&p);
-	
 	w->pump = p;
+	
 	watering_system_update(w, time_between_watering, watering_cycles, pumping_time, dry_time);
 }
 
@@ -32,4 +32,8 @@ void watering_system_start(watering_system_ptr w){
 		}
 		_time_delay(w->dry_time);
 	}
+}
+
+void watering_system_pump_water(watering_system_ptr w, uint32_t duration){
+	pump_run(&w->pump, duration);
 }

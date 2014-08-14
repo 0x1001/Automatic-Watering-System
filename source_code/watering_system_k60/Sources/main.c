@@ -29,25 +29,17 @@
 *
 *END************************************************************************/
 #include "main.h"
-#include "pump.h"
-
-
-#if !defined(RAM_DISK_SIZE)
-#error Please specify RAM_DISK_SIZE
-#endif
-
-#if defined(APPLICATION_HAS_SHELL) && (!SHELLCFG_USES_RTCS)
-#error This application requires SHELLCFG_USES_RTCS defined non-zero in user_config.h. Please recompile libraries with this option if any Ethernet interface is available.
-#endif
-
+#include "watering_system.h"
 
 TASK_TEMPLATE_STRUCT MQX_template_list[] =
 {
 /*  Task number, Entry point, Stack, Pri, String, Auto? */
    {MAIN_TASK,   Main_task,   2000,  9,   "main", MQX_AUTO_START_TASK},
+   {WATERING,   watering_task,   2000,  9,   "watering_task", 0},
    {0,           0,           0,     0,   0,      0,                 }
 };
 
+watering_system w;
 
 /*TASK*-----------------------------------------------------------------
 *
@@ -59,28 +51,28 @@ TASK_TEMPLATE_STRUCT MQX_template_list[] =
 
 void Main_task(uint32_t initial_data)
 {
-   /* Install ramdisk - MFS init */
-    //Ram_disk_start();
-  
-   /* RTCS init */
-    //rtcs_init();
-   
+	uint32_t delay = 10;
     LWGPIO_STRUCT btn1;
-    pump p;
-    
-    pump_init(&p);
-    
+	
+	watering_system_init(&w, DAY, 2, 2*SECOND, 2*DAY);
+	
+	_task_create(0, WATERING, 0);
+	
     if (!lwgpio_init(&btn1, BSP_BUTTON1, LWGPIO_DIR_INPUT, LWGPIO_VALUE_NOCHANGE))
         _task_block();
 
     lwgpio_set_functionality(&btn1, BSP_BUTTON1_MUX_GPIO);
     lwgpio_set_attribute(&btn1, LWGPIO_ATTR_PULL_UP, LWGPIO_AVAL_ENABLE);
 
-    while (TRUE)
-    {
+    while (TRUE){
         if (LWGPIO_VALUE_LOW == lwgpio_get_value(&btn1))
-            pump_run(&p,100);
+        	watering_system_pump_water(&w, delay);
         else
-        	_time_delay(100);
-   }
+        	_time_delay(delay);
+    }
+
+}
+
+void watering_task(uint32_t initial_data){
+	watering_system_start(&w);
 }
