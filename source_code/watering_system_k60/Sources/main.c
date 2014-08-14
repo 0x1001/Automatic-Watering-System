@@ -30,24 +30,12 @@
 *END************************************************************************/
 #include "main.h"
 
-#include "tfs.h"
-
-#if !defined(RAM_DISK_SIZE)
-#error Please specify RAM_DISK_SIZE
-#endif
-
-#if defined(APPLICATION_HAS_SHELL) && (!SHELLCFG_USES_RTCS)
-#error This application requires SHELLCFG_USES_RTCS defined non-zero in user_config.h. Please recompile libraries with this option if any Ethernet interface is available.
-#endif
-
-#define HTTP_SERVER   2
-void http_server_task(uint32_t initial_data); 
-
 TASK_TEMPLATE_STRUCT MQX_template_list[] =
 {
 /*  Task number, Entry point, Stack, Pri, String, Auto? */
    {MAIN_TASK,   Main_task,   2000,  9,   "main", MQX_AUTO_START_TASK},
-   {HTTP_SERVER,   http_server_task,   1400,  9,   "HTTP_SERVER", MQX_AUTO_START_TASK,   0,  0},
+   {HTTP_SERVER,   http_server_task,   2000,  9,   "HTTP_SERVER", 0,   0,  0},
+   {RTCS_INIT,   rtcs_init_task,   2000,  9,   "RTCS_INIT", 0,   0,  0},
    {0,           0,           0,     0,   0,      0,                 }
 };
 
@@ -62,78 +50,9 @@ TASK_TEMPLATE_STRUCT MQX_template_list[] =
 
 void Main_task(uint32_t initial_data)
 {
-   /* Install ramdisk - MFS init */
-    //Ram_disk_start();
-  
-   /* RTCS init */
-   rtcs_init();
+   _task_create(0,RTCS_INIT,0);
+   _task_create(0,HTTP_SERVER,0);
+   _task_block();
 }
 
-static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param){
-	HTTPSRV_CGI_RES_STRUCT response;
-
-	char str[]="CGI Wroks!";
-	
-	if (param->request_method != HTTPSRV_REQ_GET)
-	{
-		return(0);
-	}
-	
-	response.ses_handle = param->ses_handle;
-	response.content_type = HTTPSRV_CONTENT_TYPE_PLAIN;
-	response.status_code = 200;        
-	response.data = str;
-	response.data_length = sizeof(str);
-	response.content_length = response.data_length;
-	/* Send response */
-	HTTPSRV_cgi_write(&response);
-	
-	return (response.content_length);
-}
-
-const HTTPSRV_CGI_LINK_STRUCT cgi_lnk_tbl[] = {
-    { "water",        cgi_water, 1500},
-    { 0, 0 }    // DO NOT REMOVE - last item - end of table
-};
-
-static _mqx_int info(HTTPSRV_SSI_PARAM_STRUCT* param){
-    char str[]="kkk123";
-    
-    HTTPSRV_ssi_write(param->ses_handle, str, strlen(str));
-    
-    return 0;
-}
-
-const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[] = { 
-	{ "info", info },
-	{ 0, 0 }
-};
-
-void http_server_task(uint32_t initial_data) {
-    uint32_t server;
-    int32_t error;
-    //extern const HTTPSRV_CGI_LINK_STRUCT cgi_lnk_tbl[];
-    extern const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[];
-    extern const TFS_DIR_ENTRY tfs_data[];
-    HTTPSRV_PARAM_STRUCT params;
-    
-    error = _io_tfs_install("tfs:", tfs_data);
-    if (error) printf("\nTFS install returned: %08x\n", error);
-
-    /* Setup webserver parameters */
-    _mem_zero(&params, sizeof(HTTPSRV_PARAM_STRUCT));
-    params.af = AF_INET;
-    params.root_dir = "tfs:";
-    params.index_page = "\\index.shtml";
-    params.cgi_lnk_tbl = (HTTPSRV_CGI_LINK_STRUCT*)cgi_lnk_tbl;
-    params.ssi_lnk_tbl = (HTTPSRV_SSI_LINK_STRUCT*)fn_lnk_tbl;
-    params.script_stack = 3000;
-
-    server = HTTPSRV_init(&params);
-    if(!server)
-    {
-        printf("Error: HTTP server init error.\n");
-    }
-    _task_block();
-}
 
