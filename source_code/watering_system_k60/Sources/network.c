@@ -9,6 +9,9 @@
 
 static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param);
 static _mqx_int ssi_info(HTTPSRV_SSI_PARAM_STRUCT* param);
+static void server_mount_tfs(void);
+static void server_configure(HTTPSRV_PARAM_STRUCT *params);
+static uint32_t cgi_write(char *data, HTTPSRV_CGI_RES_STRUCT *response, HTTPSRV_CONTENT_TYPE type);
 
 const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[] = { 
     { "info", ssi_info },
@@ -94,26 +97,12 @@ void rtcs_init(void){
 *
 *END------------------------------------------------------------------*/
 void http_server(void){
-    uint32_t server;
-    int32_t error;
-    extern const TFS_DIR_ENTRY tfs_data[];
-    HTTPSRV_PARAM_STRUCT params;
-    
-    error = _io_tfs_install("tfs:", tfs_data);
-    if (error)
-        printf("\nTFS install returned: %08x\n", error);
+	HTTPSRV_PARAM_STRUCT params;
+	
+	server_mount_tfs();
+	server_configure(&params);
 
-    /* Setup webserver parameters */
-    _mem_zero(&params, sizeof(HTTPSRV_PARAM_STRUCT));
-    params.af = AF_INET;
-    params.root_dir = "tfs:";
-    params.index_page = "\\index.shtml";
-    params.cgi_lnk_tbl = (HTTPSRV_CGI_LINK_STRUCT*)cgi_lnk_tbl;
-    params.ssi_lnk_tbl = (HTTPSRV_SSI_LINK_STRUCT*)fn_lnk_tbl;
-    params.script_stack = 3000;
-
-    server = HTTPSRV_init(&params);
-    if(!server)
+    if(!HTTPSRV_init(&params))
         printf("Error: HTTP server init error.\n");
 }
 
@@ -125,24 +114,15 @@ void http_server(void){
 *
 *END------------------------------------------------------------------*/
 static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param){
-    HTTPSRV_CGI_RES_STRUCT response;
+	HTTPSRV_CGI_RES_STRUCT response;
 
-    char str[]="CGI Wroks!";
-    
+    watering_system_pump_water(500);
+	
     if (param->request_method != HTTPSRV_REQ_GET)
         return(0);
-
     
     response.ses_handle = param->ses_handle;
-    response.content_type = HTTPSRV_CONTENT_TYPE_PLAIN;
-    response.status_code = 200;        
-    response.data = str;
-    response.data_length = strlen(str);
-    response.content_length = response.data_length;
-    /* Send response */
-    HTTPSRV_cgi_write(&response);
-    
-    return (response.content_length);
+    return cgi_write("<html><head><meta http-equiv='refresh' content='0; url=/' /></head></html>",&response,HTTPSRV_CONTENT_TYPE_HTML);
 }
 
 /*SSI*-----------------------------------------------------------------
@@ -158,4 +138,31 @@ static _mqx_int ssi_info(HTTPSRV_SSI_PARAM_STRUCT* param){
     HTTPSRV_ssi_write(param->ses_handle, str, strlen(str));
     
     return 0;
+}
+
+void server_mount_tfs(void){
+	extern const TFS_DIR_ENTRY tfs_data[];
+	_io_tfs_install("tfs:", tfs_data);
+}
+
+void server_configure(HTTPSRV_PARAM_STRUCT *params){
+	_mem_zero(params,sizeof(HTTPSRV_PARAM_STRUCT));
+    params->af = AF_INET;
+    params->root_dir = "tfs:";
+    params->index_page = "\\index.html";
+    params->cgi_lnk_tbl = (HTTPSRV_CGI_LINK_STRUCT*)cgi_lnk_tbl;
+    params->ssi_lnk_tbl = (HTTPSRV_SSI_LINK_STRUCT*)fn_lnk_tbl;
+    params->script_stack = 3000;
+}
+
+uint32_t cgi_write(char *data, HTTPSRV_CGI_RES_STRUCT *response, HTTPSRV_CONTENT_TYPE type){
+    response->content_type = type;
+    response->status_code = 200;        
+    response->data = data;
+    response->data_length = strlen(data);
+    response->content_length = response->data_length;
+    /* Send response */
+    HTTPSRV_cgi_write(response);
+    
+    return response->content_length;
 }

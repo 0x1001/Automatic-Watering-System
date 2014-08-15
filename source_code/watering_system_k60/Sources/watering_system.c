@@ -26,12 +26,15 @@ void watering_system_init(uint32_t time_between_watering, uint32_t watering_cycl
 	pump_init(p);
 	ws_params.pump = p;
 	
+	_mutex_init(&ws_params.pump_mutex,NULL);
+	
 	watering_system_update(time_between_watering, watering_cycles, pumping_time, dry_time);
 }
 
 void watering_system_deinit(void){
 	_mem_free(ws_params.pump);
 	ws_params.pump = NULL;
+	_mutex_destroy(&ws_params.pump_mutex);
 }
 
 void watering_system_update(uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
@@ -46,7 +49,7 @@ void watering_system_start(void){
 	
 	while (TRUE){
 		for(cycle = 0; ws_params.watering_cycles > cycle; cycle++) {
-			pump_run(ws_params.pump, ws_params.pumping_time);
+			watering_system_pump_water(ws_params.pumping_time);
 			_time_delay(ws_params.time_between_watering);
 		}
 		_time_delay(ws_params.dry_time);
@@ -54,5 +57,8 @@ void watering_system_start(void){
 }
 
 void watering_system_pump_water(uint32_t duration){
-	pump_run(ws_params.pump, duration);
+	if (MQX_EOK == _mutex_try_lock(&ws_params.pump_mutex)){
+		pump_run(ws_params.pump, duration);
+		_mutex_unlock(&ws_params.pump_mutex);
+	}
 }

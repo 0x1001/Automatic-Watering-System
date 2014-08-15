@@ -11,6 +11,7 @@
 #include <rtcs.h>
 #include <ipcfg.h>
 #include "tfs.h"
+#include "watering_system.h"
 
 void http_server(void); 
 void rtcs_init(void);
