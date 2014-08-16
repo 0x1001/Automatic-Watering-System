@@ -52,8 +52,6 @@ TASK_TEMPLATE_STRUCT MQX_template_list[] =
 void Main_task(uint32_t initial_data){
     _task_create(0,RTCS_INIT,0);
     _task_create(0,HTTP_SERVER,0);
-    
-    _time_delay(5*SECOND);
     _task_create(0, WATERING, 0);
     //_task_create(0,BUTTON_CTRL,0);
    _task_block();
@@ -67,7 +65,7 @@ void Main_task(uint32_t initial_data){
 *
 *END------------------------------------------------------------------*/
 void watering_task(uint32_t initial_data){
-    watering_system(DAY, 2, 2*SECOND, 2*DAY);
+    watering_system(HOUR ,DAY, 2, 2*SECOND, 2*DAY);
     _task_block();
 }
 

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Watering System">
+    <meta name="author" content="DN">
+ 
+    <title>Watering System</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/jumbotron_narrow.css" rel="stylesheet">
+
+  </head>
+  <body>
+    <div class="container">
+        <div class="header">
+            <ul class="nav nav-pills pull-right">
+                <li class="active"><a href="#">Home</a></li>
+                <li><a href="settings.shtml">Settings</a></li>
+                <li><a href="about.shtml">About</a></li>
+            </ul>
+            <h3 class="text-muted">Watering System</h3>
+        </div>
+
+        <div class="jumbotron">
+            <h1>Water Plants</h1>
+            <p class="lead">By pressing this button you water plant for 5 seconds. Pump waters plants via rubber pipes. Water is taken from 5 litter water tank.</p>
+            <p><a class="btn btn-lg btn-success" href="water.cgi" role="button">Water Plants</a></p>
+        </div>
+
+        <div class="row marketing">
+            <div class="col-lg-6">
+                <h4>Automatic Watering</h4>
+                <p>System automatically waters plants every given period of time.</p>
+            </div>
+
+            <div class="col-lg-6">
+                <h4>Progress Bar</h4>
+                <p>Progress bar bellow indicates how much time is left to next watering.</p>
+            </div>
+        </div>
+        <small><%p_left%> hours left</small>
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped active"  role="progressbar" aria-valuenow="<%p_percent%>" aria-valuemin="0" aria-valuemax="100" style="width: <%p_percent%>%">
+                <%p_percent%>%
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; DN 2014</p>
+        </div>
+
+    </div> <!-- /container -->
+  </body>
+</html>

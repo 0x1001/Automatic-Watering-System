@@ -23,4 +23,6 @@ void rtcs_init(void);
 #define ENET_IPMASK IPADDR(255,255,255,0)
 #define ENET_GATEWAY IPADDR(192,168,0,1)
 
+#define CGI_STRING_BUFFER_SIZE 15
+
 #endif /* NETWORK_H_ */

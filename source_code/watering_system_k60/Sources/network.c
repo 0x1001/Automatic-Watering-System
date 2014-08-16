@@ -8,13 +8,15 @@
 #include "network.h"
 
 static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param);
-static _mqx_int ssi_info(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_progress_left(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_progress_percent(HTTPSRV_SSI_PARAM_STRUCT* param);
 static void server_mount_tfs(void);
 static void server_configure(HTTPSRV_PARAM_STRUCT *params);
 static uint32_t cgi_write(char *data, HTTPSRV_CGI_RES_STRUCT *response, HTTPSRV_CONTENT_TYPE type);
 
-const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[] = { 
-    { "info", ssi_info },
+const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[] = {
+	{ "p_percent", ssi_progress_percent },
+    { "p_left", ssi_progress_left },
     { 0, 0 }
 };
 
@@ -31,62 +33,53 @@ const HTTPSRV_CGI_LINK_STRUCT cgi_lnk_tbl[] = {
 *
 *END------------------------------------------------------------------*/
 void rtcs_init(void){
-   IPCFG_IP_ADDRESS_DATA ip_data;
-   _enet_address           enet_address;   
+	IPCFG_IP_ADDRESS_DATA ip_data;
+	_enet_address enet_address;   
 
-   uint32_t error = RTCS_create();
+	uint32_t error = RTCS_create();
    
-   if (error != RTCS_OK){
-      printf("\nRTCS failed to initialize, error = %X", error);
-      return;
-   }
+	if (error != RTCS_OK){
+		printf("\nRTCS failed to initialize, error = %X", error);
+		return;
+	}
 
-   _IP_forward = TRUE;
+	_IP_forward = TRUE;
 
-#ifdef BSP_ENET_DEVICE_COUNT
-#if  (BSP_ENET_DEVICE_COUNT > 0) 
-   /*Following section is relevant only in case there as some enet driver available in BSP (FEC, MACNET, WIFI or other enet driver)*/
+	ip_data.ip = ENET_IPADDR;
+	ip_data.mask = ENET_IPMASK;
+	ip_data.gateway = ENET_GATEWAY;  
    
-   ip_data.ip = ENET_IPADDR;
-   ip_data.mask = ENET_IPMASK;
-   ip_data.gateway = ENET_GATEWAY;  
+	/* calcualte unique mac address from IP ADDRES */
+	ENET_get_mac_address (ENET_DEVICE, ENET_IPADDR, enet_address);
+	error = ipcfg_init_device (ENET_DEVICE, enet_address);
    
-   /* calcualte unique mac address from IP ADDRES */
-   ENET_get_mac_address (ENET_DEVICE, ENET_IPADDR, enet_address);
-   error = ipcfg_init_device (ENET_DEVICE, enet_address);
-   
-   if (error != RTCS_OK) {
-      printf("\nFailed to initialize ethernet device, error = %X", error);
-      return;
-   }
+	if (error != RTCS_OK) {
+		printf("\nFailed to initialize ethernet device, error = %X", error);
+		return;
+	}
 
-#if RTCSCFG_ENABLE_LWDNS
-   LWDNS_server_ipaddr = ENET_GATEWAY;   
-   ipcfg_add_dns_ip(ENET_DEVICE,LWDNS_server_ipaddr);
-#endif /* RTCSCFG_ENABLE_LWDNS */
+	LWDNS_server_ipaddr = ENET_GATEWAY;   
+	ipcfg_add_dns_ip(ENET_DEVICE,LWDNS_server_ipaddr);
 
-   printf("\nWaiting for ethernet cable plug in ... ");
-   while(!ipcfg_get_link_active(ENET_DEVICE)) {};
-   printf("Cable connected\n");
+	printf("\nWaiting for ethernet cable plug in ... ");
+	while(!ipcfg_get_link_active(ENET_DEVICE)) {};
+	printf("Cable connected\n");
 
-   printf("Contacting DHCP server ... ");
-   error = ipcfg_bind_dhcp_wait(ENET_DEVICE, FALSE, &ip_data);
+	printf("Contacting DHCP server ... ");
+	error = ipcfg_bind_dhcp_wait(ENET_DEVICE, FALSE, &ip_data);
 
-   if (error != IPCFG_ERROR_OK){
-      printf("\nRTCS failed to bind interface with IPv4, error = %X", error);
-      return;
-   }
-   else
-       printf("OK\n");       
+	if (error != IPCFG_ERROR_OK){
+		printf("\nRTCS failed to bind interface with IPv4, error = %X", error);
+		return;
+	}
+	else
+		printf("OK\n");       
 
-   ipcfg_get_ip(ENET_DEVICE, &ip_data);
-   printf("\nIP Address      : %d.%d.%d.%d\n",IPBYTES(ip_data.ip));
-   printf("\nSubnet Address  : %d.%d.%d.%d\n",IPBYTES(ip_data.mask));
-   printf("\nGateway Address : %d.%d.%d.%d\n",IPBYTES(ip_data.gateway));
-   printf("\nDNS Address     : %d.%d.%d.%d\n",IPBYTES(ipcfg_get_dns_ip(ENET_DEVICE,0)));
-
-#endif /* BSP_ENET_DEVICE_COUNT > 0 */
-#endif /* BSP_ENET_DEVICE_COUNT */
+	ipcfg_get_ip(ENET_DEVICE, &ip_data);
+	printf("\nIP Address      : %d.%d.%d.%d\n",IPBYTES(ip_data.ip));
+	printf("\nSubnet Address  : %d.%d.%d.%d\n",IPBYTES(ip_data.mask));
+	printf("\nGateway Address : %d.%d.%d.%d\n",IPBYTES(ip_data.gateway));
+	printf("\nDNS Address     : %d.%d.%d.%d\n",IPBYTES(ipcfg_get_dns_ip(ENET_DEVICE,0)));
 }
 
 /*TASK*-----------------------------------------------------------------
@@ -127,15 +120,48 @@ static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param){
 
 /*SSI*-----------------------------------------------------------------
 *
-* Function Name  : ssi_info
+* Function Name  : ssi_progress_left
 * Comments       :
 *    SSI Function
 *
 *END------------------------------------------------------------------*/
-static _mqx_int ssi_info(HTTPSRV_SSI_PARAM_STRUCT* param){
-    char str[]="kkk123";
+static _mqx_int ssi_progress_left(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_progress_ptr progress;
+	uint32_t hours_left;
+	uint32_t minutes_left;
+	char template_left[] = "%d:%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	progress = watering_system_get_progress();
+	hours_left = (progress->total_time - progress->passed_time)/HOUR;
+	minutes_left = ((progress->total_time - progress->passed_time)%HOUR)/MINUTE;
+
+	sprintf(data, template_left, hours_left, minutes_left);
+
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
     
-    HTTPSRV_ssi_write(param->ses_handle, str, strlen(str));
+    return 0;
+}
+
+/*SSI*-----------------------------------------------------------------
+*
+* Function Name  : ssi_progress_percent
+* Comments       :
+*    SSI Function
+*
+*END------------------------------------------------------------------*/
+static _mqx_int ssi_progress_percent(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_progress_ptr progress;
+	uint32_t percent_progress;
+	char template_percent[] = "%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	progress = watering_system_get_progress();
+	percent_progress = (progress->passed_time*100)/progress->total_time;
+
+	sprintf(data, template_percent, percent_progress);
+		
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
     
     return 0;
 }
@@ -149,7 +175,7 @@ void server_configure(HTTPSRV_PARAM_STRUCT *params){
 	_mem_zero(params,sizeof(HTTPSRV_PARAM_STRUCT));
     params->af = AF_INET;
     params->root_dir = "tfs:";
-    params->index_page = "\\index.html";
+    params->index_page = "\\index.shtml";
     params->cgi_lnk_tbl = (HTTPSRV_CGI_LINK_STRUCT*)cgi_lnk_tbl;
     params->ssi_lnk_tbl = (HTTPSRV_SSI_LINK_STRUCT*)fn_lnk_tbl;
     params->script_stack = 3000;
