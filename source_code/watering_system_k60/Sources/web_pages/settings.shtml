@@ -15,7 +15,7 @@
     <link href="css/bootstrap3.css" rel="stylesheet">
     <link href="css/bootstrap4.css" rel="stylesheet">
     <link href="css/bootstrap5.css" rel="stylesheet">
-    
+
     <!-- Custom styles for this template -->
     <link href="css/jumbotron_narrow.css" rel="stylesheet">
 
@@ -24,17 +24,25 @@
     <div class="container">
         <div class="header">
             <ul class="nav nav-pills pull-right">
-                <li class="active"><a href="index.shtml">Home</a></li>
-                <li><a href="settings.shtml">Settings</a></li>
+                <li><a href="index.shtml">Home</a></li>
+                <li class="active"><a href="settings.shtml">Settings</a></li>
                 <li><a href="about.shtml">About</a></li>
             </ul>
             <h3 class="text-muted">Watering System</h3>
         </div>
 
         <div class="jumbotron">
-            <h1>Water Plants</h1>
-            <p class="lead">By pressing this button you water plant for 5 seconds. Pump waters plants via rubber pipes. Water is taken from 5 litter water tank.</p>
-            <p><a class="btn btn-lg btn-success" href="water.cgi" role="button">Water Plants</a></p>
+            <h1>Settings</h1>
+            <div class="panel panel-default">
+                <div class="panel-heading">Automatic Watering System Settings</div>
+                <table class="table">
+                    <tr><td>Start dalay</td><td><%ws_sd%></td><td>minutes</td></tr>
+                    <tr><td>Time between watering</td><td><%ws_tbw%></td><td>minutes</td></tr>
+                    <tr><td>Watering cycles</td><td><%ws_wc%></td><td></td></tr>
+                    <tr><td>Dry Time</td><td><%ws_dt%></td><td>minutes</td></tr>
+                    <tr><td>Pumping time</td><td><%ws_pt%></td><td>seconds</td></tr>
+                </table>
+            </div>
         </div>
 
         <div class="row marketing">

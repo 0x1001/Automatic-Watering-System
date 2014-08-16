@@ -8,8 +8,15 @@
 #include "network.h"
 
 static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param);
+
 static _mqx_int ssi_progress_left(HTTPSRV_SSI_PARAM_STRUCT* param);
 static _mqx_int ssi_progress_percent(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_pumping_time(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_start_delay(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_time_between_watering(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_watering_cycles(HTTPSRV_SSI_PARAM_STRUCT* param);
+static _mqx_int ssi_dry_time(HTTPSRV_SSI_PARAM_STRUCT* param);
+
 static void server_mount_tfs(void);
 static void server_configure(HTTPSRV_PARAM_STRUCT *params);
 static uint32_t cgi_write(char *data, HTTPSRV_CGI_RES_STRUCT *response, HTTPSRV_CONTENT_TYPE type);
@@ -17,6 +24,11 @@ static uint32_t cgi_write(char *data, HTTPSRV_CGI_RES_STRUCT *response, HTTPSRV_
 const HTTPSRV_SSI_LINK_STRUCT fn_lnk_tbl[] = {
 	{ "p_percent", ssi_progress_percent },
     { "p_left", ssi_progress_left },
+    { "ws_pt", ssi_pumping_time },
+    { "ws_dt", ssi_dry_time },
+    { "ws_wc", ssi_watering_cycles },
+    { "ws_tbw", ssi_time_between_watering },
+    { "ws_sd", ssi_start_delay },
     { 0, 0 }
 };
 
@@ -109,7 +121,7 @@ void http_server(void){
 static _mqx_int cgi_water(HTTPSRV_CGI_REQ_STRUCT* param){
 	HTTPSRV_CGI_RES_STRUCT response;
 
-    watering_system_pump_water(500);
+    watering_system_pump_water(5*SECOND);
 	
     if (param->request_method != HTTPSRV_REQ_GET)
         return(0);
@@ -129,15 +141,21 @@ static _mqx_int ssi_progress_left(HTTPSRV_SSI_PARAM_STRUCT* param){
 	watering_system_progress_ptr progress;
 	uint32_t hours_left;
 	uint32_t minutes_left;
-	char template_left[] = "%d:%d";
 	char data[CGI_STRING_BUFFER_SIZE];
 	
 	progress = watering_system_get_progress();
 	hours_left = (progress->total_time - progress->passed_time)/HOUR;
 	minutes_left = ((progress->total_time - progress->passed_time)%HOUR)/MINUTE;
 
-	sprintf(data, template_left, hours_left, minutes_left);
-
+	if (hours_left < 10 && minutes_left < 10)
+		sprintf(data, "0%d:0%d", hours_left, minutes_left);
+	else if (hours_left >= 10 && minutes_left < 10)
+		sprintf(data, "%d:0%d", hours_left, minutes_left);
+	else if (hours_left < 10 && minutes_left >= 10)
+		sprintf(data, "0%d:%d", hours_left, minutes_left);
+	else
+		sprintf(data, "%d:%d", hours_left, minutes_left);
+	
     HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
     
     return 0;
@@ -160,6 +178,106 @@ static _mqx_int ssi_progress_percent(HTTPSRV_SSI_PARAM_STRUCT* param){
 	percent_progress = (progress->passed_time*100)/progress->total_time;
 
 	sprintf(data, template_percent, percent_progress);
+		
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
+    
+    return 0;
+}
+
+/*SSI*-----------------------------------------------------------------
+*
+* Function Name  : ssi_pumping_time
+* Comments       :
+*    SSI Function
+*
+*END------------------------------------------------------------------*/
+static _mqx_int ssi_pumping_time(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_params_ptr ws_params;
+	char template[] = "%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	ws_params = watering_system_get_params();
+	sprintf(data, template, ws_params->pumping_time/SECOND);
+		
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
+    
+    return 0;
+}
+
+/*SSI*-----------------------------------------------------------------
+*
+* Function Name  : ssi_start_delay
+* Comments       :
+*    SSI Function
+*
+*END------------------------------------------------------------------*/
+static _mqx_int ssi_start_delay(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_params_ptr ws_params;
+	char template[] = "%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	ws_params = watering_system_get_params();
+	sprintf(data, template, ws_params->start_delay/MINUTE);
+		
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
+    
+    return 0;
+}
+
+/*SSI*-----------------------------------------------------------------
+*
+* Function Name  : ssi_time_between_watering
+* Comments       :
+*    SSI Function
+*
+*END------------------------------------------------------------------*/
+static _mqx_int ssi_time_between_watering(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_params_ptr ws_params;
+	char template[] = "%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	ws_params = watering_system_get_params();
+	sprintf(data, template, ws_params->time_between_watering/MINUTE);
+		
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
+    
+    return 0;
+}
+
+/*SSI*-----------------------------------------------------------------
+*
+* Function Name  : ssi_watering_cycles
+* Comments       :
+*    SSI Function
+*
+*END------------------------------------------------------------------*/
+static _mqx_int ssi_watering_cycles(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_params_ptr ws_params;
+	char template[] = "%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	ws_params = watering_system_get_params();
+	sprintf(data, template, ws_params->watering_cycles);
+		
+    HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
+    
+    return 0;
+}
+
+/*SSI*-----------------------------------------------------------------
+*
+* Function Name  : ssi_dry_time
+* Comments       :
+*    SSI Function
+*
+*END------------------------------------------------------------------*/
+static _mqx_int ssi_dry_time(HTTPSRV_SSI_PARAM_STRUCT* param){
+	watering_system_params_ptr ws_params;
+	char template[] = "%d";
+	char data[CGI_STRING_BUFFER_SIZE];
+	
+	ws_params = watering_system_get_params();
+	sprintf(data, template, ws_params->dry_time/MINUTE);
 		
     HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
     

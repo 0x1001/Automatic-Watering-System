@@ -23,11 +23,11 @@ void pump_run(pump_ptr p,uint32_t duration){
 	uint32_t counter;
 	
 	_led_pwr_on(p);
-	for(counter = 0; counter <= duration; counter += 2){
+	for(counter = 0; counter <= duration; counter += 20){
 		_pump_pwr_on(p);
-		_time_delay(1);
+		_time_delay(10);
 		_pump_pwr_off(p);
-		_time_delay(1);
+		_time_delay(10);
 	}
 	_led_pwr_off(p);
 }

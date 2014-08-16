@@ -15,7 +15,7 @@
     <link href="css/bootstrap3.css" rel="stylesheet">
     <link href="css/bootstrap4.css" rel="stylesheet">
     <link href="css/bootstrap5.css" rel="stylesheet">
-    
+
     <!-- Custom styles for this template -->
     <link href="css/jumbotron_narrow.css" rel="stylesheet">
 
@@ -24,17 +24,16 @@
     <div class="container">
         <div class="header">
             <ul class="nav nav-pills pull-right">
-                <li class="active"><a href="index.shtml">Home</a></li>
+                <li><a href="index.shtml">Home</a></li>
                 <li><a href="settings.shtml">Settings</a></li>
-                <li><a href="about.shtml">About</a></li>
+                <li class="active"><a href="about.shtml">About</a></li>
             </ul>
             <h3 class="text-muted">Watering System</h3>
         </div>
 
         <div class="jumbotron">
-            <h1>Water Plants</h1>
-            <p class="lead">By pressing this button you water plant for 5 seconds. Pump waters plants via rubber pipes. Water is taken from 5 litter water tank.</p>
-            <p><a class="btn btn-lg btn-success" href="water.cgi" role="button">Water Plants</a></p>
+            <h1>About</h1>
+            <p class="lead">This is an open source project. Source code and other materials can be found on <a href=https://github.com/0x1001/Automatic-Watering-System>Git Hub</a>.<br><small>Main contributor is <a href='mailto:damian.nowok@gmail.com'>Damian Nowok</a>.</small></p>
         </div>
 
         <div class="row marketing">
@@ -48,6 +47,7 @@
                 <p>Progress bar bellow indicates how much time is left to next watering.</p>
             </div>
         </div>
+        
         <h4>Hours and minutes left to next watering.</h4>
         <div class="progress">
             <div class="progress-bar progress-bar-striped active"  role="progressbar" aria-valuenow="<%p_percent%>" aria-valuemin="0" aria-valuemax="100" style="width: <%p_percent%>%">

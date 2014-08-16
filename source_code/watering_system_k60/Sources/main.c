@@ -34,7 +34,8 @@ TASK_TEMPLATE_STRUCT MQX_template_list[] =
 {
 /*  Task number, Entry point, Stack, Pri, String, Auto? */
    {MAIN_TASK,   Main_task,   2000,  10,   "main", MQX_AUTO_START_TASK},
-   {WATERING,   watering_task,   2000,  9,   "watering_task", 0},
+   {WATERING,   watering_task,   2000,  10,   "watering_task", 0},
+   {WATERING_PUMP,   watering_pump_task,   2000,  9,   "watering_pump_task", 0},
    {HTTP_SERVER,   http_server_task,   2000,  10,   "HTTP_SERVER", 0,   0,  0},
    {RTCS_INIT,   rtcs_init_task,   2000,  10,   "RTCS_INIT", 0,   0,  0},
    {BUTTON_CTRL,   button_task,   2000,  11,   "BUTTON_CTRL", 0,   0,  0},
@@ -65,7 +66,7 @@ void Main_task(uint32_t initial_data){
 *
 *END------------------------------------------------------------------*/
 void watering_task(uint32_t initial_data){
-    watering_system(HOUR ,DAY, 2, 2*SECOND, 2*DAY);
+    watering_system(44*HOUR ,2*DAY, 2, 10*SECOND, 1*DAY);
     _task_block();
 }
 

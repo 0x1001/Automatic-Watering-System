@@ -24,11 +24,20 @@ watering_system_progress_ptr watering_system_get_progress(void){
 	return &ws_params.progress;
 }
 
-void watering_system_pump_water(uint32_t duration){
-	if (MQX_EOK == _mutex_try_lock(&ws_params.pump_mutex)){
-		pump_run(ws_params.pump, duration);
-		_mutex_unlock(&ws_params.pump_mutex);
+watering_system_params_ptr watering_system_get_params(void){
+	return &ws_params;
+}
+
+void watering_pump_task(uint32_t initial_data){
+	while (TRUE){
+		_lwevent_wait_for(&ws_params.pump_event,EVENT_MASK,TRUE,NULL);
+		pump_run(ws_params.pump, ws_params.current_pump_time);
 	}
+}
+
+void watering_system_pump_water(uint32_t duration){
+	ws_params.current_pump_time = duration;
+	_lwevent_set(&ws_params.pump_event,EVENT_MASK);
 }
 
 void watering_system_init(uint32_t start_delay, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
@@ -38,7 +47,10 @@ void watering_system_init(uint32_t start_delay, uint32_t time_between_watering, 
 	pump_init(p);
 	ws_params.pump = p;
 	
-	_mutex_init(&ws_params.pump_mutex,NULL);
+	_lwevent_create(&ws_params.pump_event,0);
+	_lwevent_set_auto_clear(&ws_params.pump_event,EVENT_MASK);
+	
+	_task_create(0,WATERING_PUMP,0);
 	
 	watering_system_update(start_delay, time_between_watering, watering_cycles, pumping_time, dry_time);
 }
@@ -46,7 +58,7 @@ void watering_system_init(uint32_t start_delay, uint32_t time_between_watering, 
 void watering_system_deinit(void){
 	_mem_free(ws_params.pump);
 	ws_params.pump = NULL;
-	_mutex_destroy(&ws_params.pump_mutex);
+	_lwevent_destroy(&ws_params.pump_event);
 }
 
 void watering_system_update(uint32_t start_delay, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
@@ -73,9 +85,16 @@ void watering_system_start(void){
 void watering_system_delay(uint32_t delay){
 	uint32_t refresh_time = 60*SECOND;
 	
+	if (delay == 0)
+		return;
+	else if (delay < refresh_time)
+		refresh_time = delay;
+	
 	ws_params.progress.total_time = delay;
 	ws_params.progress.passed_time = 0;
 	
 	for (ws_params.progress.passed_time = 0; ws_params.progress.passed_time <= ws_params.progress.total_time; ws_params.progress.passed_time += refresh_time)
 		_time_delay(refresh_time);
+	
+	ws_params.progress.passed_time = delay;
 }
