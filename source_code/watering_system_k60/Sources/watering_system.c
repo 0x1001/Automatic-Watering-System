@@ -9,12 +9,12 @@
 
 static watering_system_params ws_params;
 
-static void watering_system_init(uint32_t start_delay,uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time);
+static void watering_system_init(uint64_t start_delay,uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time);
 static void watering_system_start(void);
 static void watering_system_deinit(void);
-static void watering_system_delay(uint32_t delay);
+static void watering_system_delay(uint64_t delay);
 
-void watering_system(uint32_t start_delay, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
+void watering_system(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time){
 	watering_system_init(start_delay, time_between_watering, watering_cycles, pumping_time, dry_time);
 	watering_system_start();
 	watering_system_deinit();
@@ -40,7 +40,7 @@ void watering_system_pump_water(uint32_t duration){
 	_lwevent_set(&ws_params.pump_event,EVENT_MASK);
 }
 
-void watering_system_init(uint32_t start_delay, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
+void watering_system_init(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time){
 	pump_ptr p;
 	
 	p = (pump_ptr)_mem_alloc_zero(sizeof(pump));
@@ -61,7 +61,7 @@ void watering_system_deinit(void){
 	_lwevent_destroy(&ws_params.pump_event);
 }
 
-void watering_system_update(uint32_t start_delay, uint32_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint32_t dry_time){
+void watering_system_update(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time){
 	ws_params.pumping_time = pumping_time;
 	ws_params.dry_time = dry_time;
 	ws_params.watering_cycles = watering_cycles;
@@ -82,8 +82,8 @@ void watering_system_start(void){
 	}
 }
 
-void watering_system_delay(uint32_t delay){
-	uint32_t refresh_time = 60*SECOND;
+void watering_system_delay(uint64_t delay){
+	uint64_t refresh_time = 60*SECOND;
 	
 	if (delay == 0)
 		return;
