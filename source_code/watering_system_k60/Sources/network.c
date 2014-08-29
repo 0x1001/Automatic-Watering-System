@@ -171,13 +171,12 @@ static _mqx_int ssi_progress_left(HTTPSRV_SSI_PARAM_STRUCT* param){
 static _mqx_int ssi_progress_percent(HTTPSRV_SSI_PARAM_STRUCT* param){
 	watering_system_progress_ptr progress;
 	uint32_t percent_progress;
-	char template_percent[] = "%d";
 	char data[CGI_STRING_BUFFER_SIZE];
 	
 	progress = watering_system_get_progress();
 	percent_progress = (progress->passed_time*100)/progress->total_time;
 
-	sprintf(data, template_percent, percent_progress);
+	sprintf(data, "%d", percent_progress);
 		
     HTTPSRV_ssi_write(param->ses_handle, data, strlen(data));
     

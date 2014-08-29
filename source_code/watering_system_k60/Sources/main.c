@@ -66,7 +66,7 @@ void Main_task(uint32_t initial_data){
 *
 *END------------------------------------------------------------------*/
 void watering_task(uint32_t initial_data){
-    watering_system(44*HOUR ,2*DAY, 2, 10*SECOND, 1*DAY);
+    watering_system(24*HOUR ,2*DAY, 3, 15*SECOND, 1*DAY);
     _task_block();
 }
 
