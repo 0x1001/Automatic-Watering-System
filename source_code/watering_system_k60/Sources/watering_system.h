@@ -26,20 +26,18 @@ typedef struct {
 
 typedef struct {
 	uint64_t start_delay;
-	uint32_t pumping_time;
-	uint32_t current_pump_time;
 	uint64_t time_between_watering;
 	uint32_t watering_cycles;
 	uint64_t dry_time;
+	uint32_t pumping_time;
 	pump_ptr pump;
-	LWEVENT_STRUCT pump_event;
 	watering_system_progress progress;
 } watering_system_params, *watering_system_params_ptr;
 
 void watering_system(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time);
 void watering_pump_task(uint32_t);
 void watering_system_update(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time);
-void watering_system_pump_water(uint32_t duration);
+void watering_system_pump_water(uint32_t pumping_time);
 watering_system_progress_ptr watering_system_get_progress(void);
 watering_system_params_ptr watering_system_get_params(void);
 

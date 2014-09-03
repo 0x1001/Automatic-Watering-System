@@ -28,16 +28,13 @@ watering_system_params_ptr watering_system_get_params(void){
 	return &ws_params;
 }
 
-void watering_pump_task(uint32_t initial_data){
-	while (TRUE){
-		_lwevent_wait_for(&ws_params.pump_event,EVENT_MASK,TRUE,NULL);
-		pump_run(ws_params.pump, ws_params.current_pump_time);
-	}
+void watering_pump_task(uint32_t pumping_time){
+		pump_run(ws_params.pump, pumping_time);
 }
 
-void watering_system_pump_water(uint32_t duration){
-	ws_params.current_pump_time = duration;
-	_lwevent_set(&ws_params.pump_event,EVENT_MASK);
+void watering_system_pump_water(uint32_t pumping_time){
+	if (_task_get_id_from_name("watering_pump_task") == MQX_NULL_TASK_ID)
+		_task_create(0, WATERING_PUMP, pumping_time);
 }
 
 void watering_system_init(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time){
@@ -47,18 +44,12 @@ void watering_system_init(uint64_t start_delay, uint64_t time_between_watering, 
 	pump_init(p);
 	ws_params.pump = p;
 	
-	_lwevent_create(&ws_params.pump_event,0);
-	_lwevent_set_auto_clear(&ws_params.pump_event,EVENT_MASK);
-	
-	_task_create(0,WATERING_PUMP,0);
-	
 	watering_system_update(start_delay, time_between_watering, watering_cycles, pumping_time, dry_time);
 }
 
 void watering_system_deinit(void){
 	_mem_free(ws_params.pump);
 	ws_params.pump = NULL;
-	_lwevent_destroy(&ws_params.pump_event);
 }
 
 void watering_system_update(uint64_t start_delay, uint64_t time_between_watering, uint32_t watering_cycles, uint32_t pumping_time, uint64_t dry_time){
